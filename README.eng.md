@@ -59,7 +59,7 @@ Cursor IDE's AI can't read PDF files natively, which is frankly annoying when yo
 
 1. **Clone the repository:**
 ```bash
-git clone https://github.com/yourusername/pdf-mcp-server.git
+git clone https://github.com/EEager/pdf-mcp-server.git
 cd pdf-mcp-server
 ```
 

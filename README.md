@@ -59,7 +59,7 @@ Cursor IDE의 AI는 기본적으로 PDF 파일을 읽지 못합니다. 문서나
 
 1. **리포지토리 클론:**
 ```bash
-git clone https://github.com/yourusername/pdf-mcp-server.git
+git clone https://github.com/EEager/pdf-mcp-server.git
 cd pdf-mcp-server
 ```
 
