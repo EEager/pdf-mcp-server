@@ -192,7 +192,7 @@ Available MCP tools provided by the server:
   "text": "Contents\n문서정보1\n00. 입문자들을위한조언(Q&A)2\n00.교육문의8\n00.\n유료\nE‑book\n안내\n9\n00.책과저자소개하기10\n01. [기초] ‑딥러닝을시작하기전에11\n01‑01코랩(Colab)과아나콘다12\n1.아나콘다(Anaconda)설치...",
   "pageCount": 962,
   "title": "딥 러닝 파이토치 교과서 - 입문부터 파인튜닝까지",
-  "author": "이 책은 안혜정(wjddk582@naver.com)님이 구매하신 전자책입니다.",
+  "author": "이 책은 님이 구매하신 전자책입니다.",
   "creator": "WikiDocs",
   "producer": "xdvipdfmx (20210609)",
   "creationDate": "D:20250521134136+09'00'"
