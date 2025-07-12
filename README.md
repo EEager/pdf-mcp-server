@@ -1,89 +1,79 @@
-# PDF MCP Server
+# PDF MCP 서버
 
-[English](README.md) | [한국어](README.ko.md)
+[한국어](README.md) | [English](README.eng.md)
 
-A practical PDF parsing tool wrapped as an MCP (Model Context Protocol) server for Cursor IDE integration. 
+PDF 파싱 도구를 MCP(Model Context Protocol) 서버로 래핑해서 Cursor IDE와 연동하는 실용적인 프로젝트입니다.
 
-## Why This Exists
+## ✅아키텍처 개요
 
-Cursor IDE's AI can't read PDF files natively, which is frankly annoying when you're trying to analyze documentation, research papers, or any PDF content. This MCP server bridges that gap by providing PDF parsing capabilities through the MCP protocol.
+![Architecture Overview](docs/images/1_architecture-overview.png)
 
-**Reality Check**: This isn't revolutionary. We're essentially wrapping existing PDF parsing libraries into an MCP interface. But sometimes the most practical solutions are the boring ones.
+PDF MCP 서버는 MCP 프로토콜을 통해 Cursor IDE와 PDF 파일 사이의 다리 역할을 합니다.
 
-## Current Status
+## ✅왜 만들었나?
 
-✅ **Completed:**
-- Basic MCP server structure with McpServer API
-- PDF text extraction using pdf-parse library
-- PDF metadata extraction 
-- PDF file validation
-- Complete test suite (8/8 tests passing)
-- TypeScript build system
-- Docker-based development environment
+Cursor IDE의 AI는 기본적으로 PDF 파일을 읽지 못합니다. 문서나 논문, PDF 자료를 분석하려고 할 때마다 답답했죠. 이 MCP 서버가 그 문제를 해결해줍니다.
 
-🔧 **Next Steps:**
-- MCP Inspector integration testing
-- Cursor IDE MCP configuration
-- Real PDF file testing
-- GitHub Actions CI/CD setup
+**현실적 고백**: 혁신적인 건 아닙니다. 기존 PDF 파싱 라이브러리를 MCP 인터페이스로 감싼 것뿐이에요. 하지만 때로는 가장 실용적인 해결책이 가장 지루한 해결책이기도 하죠.
 
-## Features
+## ✅기능
 
-### Current Implementation
-- **extract_pdf_text**: Extract text content from PDF files
-- **get_pdf_metadata**: Get PDF metadata (title, author, creation date, etc.)
-- **validate_pdf**: Validate PDF file format and size limits
+### 현재 구현된 기능
+- **extract_pdf_text**: PDF 파일에서 텍스트 추출
+- **get_pdf_metadata**: PDF 메타데이터 추출 (제목, 작성자, 생성일 등)
+- **validate_pdf**: PDF 파일 형식 및 크기 제한 검증
 
-### Planned Features
-- [ ] Page-by-page text extraction
-- [ ] Table detection and extraction
-- [ ] Image extraction capabilities
-- [ ] OCR support for scanned PDFs
-- [ ] Batch processing
+### 계획된 기능
+- [ ] 페이지별 텍스트 추출
+- [ ] 표 감지 및 추출
+- [ ] 이미지 추출
+- [ ] 스캔된 PDF OCR 지원
+- [ ] 배치 처리
 
-## Tech Stack
 
-- **TypeScript** - Because type safety matters, even for wrapper projects
-- **pdf-parse** - Battle-tested PDF parsing library
-- **@modelcontextprotocol/sdk** v1.15.1 - Latest MCP SDK
-- **zod** - Schema validation for MCP tools
-- **Jest** - Testing framework
-- **Docker** - Cross-platform development environment
+## ✅기술 스택
+- **TypeScript** - 래퍼 프로젝트라도 타입 안정성은 중요하니까
+- **pdf-parse** - 검증된 PDF 파싱 라이브러리
+- **@modelcontextprotocol/sdk** v1.15.1 - 최신 MCP SDK
+- **zod** - MCP 도구 스키마 검증
+- **Jest** - 테스트 프레임워크
+- **Docker** - 크로스 플랫폼 개발 환경
 
-## Installation
+## ✅설치
 
-### Prerequisites
-- Docker (recommended) or Node.js 18+
+### 필수 요구사항
+- Docker (권장) 또는 Node.js 18+
 - Cursor IDE
 
-### Method 1: Docker Setup (Recommended)
+### 방법 1: Docker 설정 (권장)
 
-This method avoids WSL/Windows path conflicts and npm permission issues.
+WSL/Windows 경로 충돌과 npm 권한 문제를 피할 수 있습니다.
 
-1. **Clone the repository:**
+1. **리포지토리 클론:**
 ```bash
 git clone https://github.com/yourusername/pdf-mcp-server.git
 cd pdf-mcp-server
 ```
 
-2. **Install dependencies:**
+2. **의존성 설치:**
 ```bash
 docker run -it --rm -v ~/workspace/pdf-mcp-server:/app -w /app node:20 npm install
 ```
 
-3. **Build the project:**
+3. **프로젝트 빌드:**
 ```bash
 docker run -it --rm -v ~/workspace/pdf-mcp-server:/app -w /app node:20 npm run build
 ```
 
-4. **Run tests:**
+4. **테스트 실행:**
 ```bash
 docker run -it --rm -v ~/workspace/pdf-mcp-server:/app -w /app node:20 npm test
+# 테스트가 성공적으로 완료되면 다음과 같은 메시지가 표시됩니다: "PDF MCP Server running on stdio"
 ```
 
-### Method 2: Native Node.js Setup
+### 방법 2: 네이티브 Node.js 설정
 
-If you prefer native Node.js (may encounter path issues on WSL):
+네이티브 Node.js를 선호한다면 (WSL에서 경로 문제 발생 가능):
 
 ```bash
 npm install
@@ -91,9 +81,9 @@ npm run build
 npm test
 ```
 
-### Cursor IDE Configuration
+### Cursor IDE 설정
 
-Add to your Cursor MCP settings file (`~/.cursor/mcp_servers.json`):
+Cursor MCP 설정 파일(`~/.cursor/mcp_servers.json`)에 추가:
 
 ```json
 {
@@ -106,123 +96,130 @@ Add to your Cursor MCP settings file (`~/.cursor/mcp_servers.json`):
 }
 ```
 
-## Usage
+## ✅사용법
 
-Once configured, you can use these commands in Cursor IDE:
+설정이 완료되면 Cursor IDE에서 다음과 같이 사용할 수 있습니다:
 
-### Extract Text from PDF
+### 1. PDF 텍스트 추출 (extract_pdf_text)
 ```
-Can you read the content of document.pdf?
-```
+사용자: "document.pdf 파일의 내용을 읽어줄 수 있어?"
 
-### Get PDF Metadata
-```
-What's the metadata of this PDF file?
+응답: PDF 파일에서 추출된 전체 텍스트와 페이지 수, 기본 메타데이터가 함께 제공됩니다.
 ```
 
-### Validate PDF File
+### 2. PDF 메타데이터 확인 (get_pdf_metadata)
 ```
-Is this file a valid PDF?
+사용자: "이 PDF 파일의 메타데이터가 뭐야?"
+
+응답: 제목, 작성자, 생성일, 수정일, 페이지 수 등의 상세 정보가 제공됩니다.
 ```
 
-## Development
+### 3. PDF 파일 검증 (validate_pdf)
+```
+사용자: "이 파일이 유효한 PDF인가?"
 
-### Project Structure
+응답: 파일 형식, 크기 제한, 접근 가능성을 확인한 검증 결과가 제공됩니다.
+```
+
+### MCP 도구 목록
+서버가 제공하는 MCP 도구들:
+
+| 도구명 | 설명 | 입력 파라미터 | 출력 |
+|--------|------|---------------|------|
+| `extract_pdf_text` | PDF 텍스트 추출 | `filePath: string` | 텍스트, 페이지수, 메타데이터 |
+| `get_pdf_metadata` | 메타데이터 추출 | `filePath: string` | 제목, 작성자, 생성일 등 |
+| `validate_pdf` | PDF 검증 | `filePath: string` | 유효성 여부, 오류 메시지 |
+
+## ✅개발
+
+### 프로젝트 구조
 ```
 pdf-mcp-server/
 ├── src/
-│   ├── index.ts          # MCP server entry point
-│   ├── pdf-parser.ts     # PDF parsing logic
-│   └── types.ts          # TypeScript definitions
+│   ├── index.ts          # MCP 서버 진입점
+│   ├── pdf-parser.ts     # PDF 파싱 로직
+│   └── types.ts          # TypeScript 타입 정의
 ├── tests/
-│   └── pdf-parser.test.ts # Jest test suite
-├── dist/                 # Build output
+│   └── pdf-parser.test.ts # Jest 테스트 스위트
+├── docs/
+│   └── images/           # 문서 이미지
+├── dist/                 # 빌드 결과물
 ├── package.json
 ├── tsconfig.json
 └── README.md
 ```
 
-### Development Scripts
+### 개발 스크립트
 ```bash
-# With Docker (recommended)
+# Docker 사용 (권장)
 docker run -it --rm -v ~/workspace/pdf-mcp-server:/app -w /app node:20 npm run dev
 docker run -it --rm -v ~/workspace/pdf-mcp-server:/app -w /app node:20 npm run build
 docker run -it --rm -v ~/workspace/pdf-mcp-server:/app -w /app node:20 npm test
 
-# Native Node.js
-npm run dev        # Development mode with hot reload
-npm run build      # Build for production  
-npm run test       # Run tests
-npm run lint       # Lint code
-npm run format     # Format code with Prettier
+# 네이티브 Node.js
+npm run dev        # 개발 모드 (핫 리로드)
+npm run build      # 프로덕션 빌드
+npm run test       # 테스트 실행
+npm run lint       # 코드 린트
+npm run format     # Prettier로 코드 포맷팅
 ```
 
-### Testing with MCP Inspector
+### MCP Inspector로 테스트
 
 ```bash
-# Test the MCP server functionality
+# MCP 서버 기능 테스트
 npx @modelcontextprotocol/inspector node dist/index.js
 ```
 
-## Implementation Notes
 
-### Environment Challenges Solved
-- **WSL/Windows Path Conflicts**: Resolved using Docker containerization
-- **npm Permission Issues**: Docker isolation prevents file system conflicts
-- **MCP SDK Version Mismatch**: Updated from non-existent 0.2.0 to latest 1.15.1
-- **API Changes**: Migrated from legacy Server to new McpServer API
+## ✅구현 노트
 
-### Architecture Decisions
-- **Modular Design**: Separate PDF parsing logic from MCP server logic
-- **Comprehensive Testing**: Full test coverage with mocked dependencies
-- **Type Safety**: Strict TypeScript configuration with zod validation
-- **Error Handling**: Graceful error handling for file operations and PDF parsing
+### 해결된 환경 문제들
+- **WSL/Windows 경로 충돌**: Docker 컨테이너화로 해결
+- **npm 권한 문제**: Docker 격리로 파일 시스템 충돌 방지
+- **MCP SDK 버전 불일치**: 존재하지 않는 0.2.0에서 최신 1.15.1로 업데이트
+- **API 변경**: 레거시 Server에서 새로운 McpServer API로 마이그레이션
 
-## Troubleshooting
+### 아키텍처 결정사항
+- **모듈러 설계**: PDF 파싱 로직과 MCP 서버 로직 분리
+- **포괄적 테스트**: 목킹된 의존성으로 완전한 테스트 커버리지
+- **타입 안전성**: zod 검증과 함께 엄격한 TypeScript 설정
+- **에러 핸들링**: 파일 작업과 PDF 파싱에 대한 우아한 에러 처리
 
-### Common Issues
+## ✅문제 해결
 
-**npm install fails with UNC path errors:**
-- Use Docker method instead of native Node.js
-- Ensure you're running from WSL, not Windows Command Prompt
+### 일반적인 문제들
 
-**TypeScript compilation errors:**
-- Check Node.js version (requires 18+)
-- Verify all dependencies are installed
+**UNC 경로 오류로 npm install 실패:**
+- 네이티브 Node.js 대신 Docker 방식 사용
+- Windows Command Prompt가 아닌 WSL에서 실행하는지 확인
 
-**MCP server not recognized in Cursor:**
-- Verify the path in mcp_servers.json is correct
-- Ensure the server builds successfully first
+**TypeScript 컴파일 오류:**
+- Node.js 버전 확인 (18+ 필요)
+- 모든 의존성이 설치되었는지 확인
 
-## Contributing
+**Cursor에서 MCP 서버 인식 안됨:**
+- mcp_servers.json의 경로가 올바른지 확인
+- 서버가 성공적으로 빌드되었는지 먼저 확인
 
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/amazing-feature`
-3. Make changes and ensure tests pass: `npm test`
-4. Commit changes: `git commit -m 'Add amazing feature'`
-5. Push to branch: `git push origin feature/amazing-feature`
-6. Open a Pull Request
+## ✅제한사항
 
-**Note**: All PRs must include tests and pass the existing test suite.
+- **파일 크기**: 큰 PDF(100MB 이상)는 성능상 이유로 거부됨
+- **복잡한 레이아웃**: 표나 다단 레이아웃은 완벽하게 파싱되지 않을 수 있음
+- **스캔된 PDF**: OCR 지원은 계획 중이지만 아직 미구현
+- **보안**: 악성코드 스캔이나 악성 PDF 탐지 기능 없음
 
-## Limitations
+## ✅라이선스
 
-- **File Size**: Large PDFs (>100MB) will be rejected for performance reasons
-- **Complex Layouts**: Tables and multi-column layouts may not parse perfectly
-- **Scanned PDFs**: OCR support is planned but not yet implemented
-- **Security**: No malware scanning or malicious PDF detection
+MIT 라이선스 - 공유가 배려니까, 그리고 어차피 래퍼일 뿐이니까.
 
-## License
+## ✅감사의 말
 
-MIT License - because sharing is caring, and this is just a wrapper anyway.
-
-## Acknowledgments
-
-- [pdf-parse](https://www.npmjs.com/package/pdf-parse) - The actual PDF parsing heavy lifting
-- [MCP Protocol](https://modelcontextprotocol.io/) - For making this integration possible  
-- [Cursor IDE](https://cursor.sh/) - For building an IDE that's actually worth extending
-- Docker community - For solving our environment compatibility nightmares
+- [pdf-parse](https://www.npmjs.com/package/pdf-parse) - 실제 PDF 파싱의 무거운 작업을 담당
+- [MCP Protocol](https://modelcontextprotocol.io/) - 이런 연동을 가능하게 해준
+- [Cursor IDE](https://cursor.sh/) - 확장할 가치가 있는 IDE를 만들어준
+- Docker 커뮤니티 - 환경 호환성 악몽을 해결해준
 
 ---
 
-**Status**: Early development phase. Basic functionality works, but expect rough edges and breaking changes. This is a learning project disguised as a productivity tool.
+**상태**: 초기 개발 단계. 기본 기능은 작동하지만 거친 부분들과 브레이킹 체인지를 예상하세요. 생산성 도구로 포장된 학습 프로젝트입니다.
