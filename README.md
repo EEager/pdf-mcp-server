@@ -16,22 +16,32 @@ Cursor IDE의 AI는 기본적으로 PDF 파일을 읽지 못합니다. 문서나
 
 **현실적 고백**: 혁신적인 건 아닙니다. 기존 PDF 파싱 라이브러리를 MCP 인터페이스로 감싼 것뿐이에요. 하지만 때로는 가장 실용적인 해결책이 가장 지루한 해결책이기도 하죠.
 
+## ✅현재 상태
+
+🔧**완성된 것들:**
+- McpServer API 기반 MCP 서버 구조
+- pdf-parse 라이브러리를 이용한 PDF 텍스트 추출
+- PDF 메타데이터 추출
+- PDF 파일 검증 기능
+- 완전한 테스트 스위트 (8/8 테스트 통과)
+- TypeScript 빌드 시스템
+- Docker 기반 개발 환경
+- Cursor IDE 연동 완료 및 실제 동작 확인
+
+🔧 **다음 단계:**
+- 페이지별 텍스트 추출
+- 표 데이터 추출
+- GitHub Actions CI/CD 설정
+
 ## ✅기능
 
 ### 현재 구현된 기능
-- **extract_pdf_text**: PDF 파일에서 텍스트 추출
-- **get_pdf_metadata**: PDF 메타데이터 추출 (제목, 작성자, 생성일 등)
+- **extract_pdf_text**: PDF 파일에서 텍스트 추출 (크기 제한: 100KB)
+- **get_pdf_metadata**: PDF 메타데이터 추출 (제목, 작성자, 생성일 등 + 텍스트 미리보기 200자)
 - **validate_pdf**: PDF 파일 형식 및 크기 제한 검증
 
-### 계획된 기능
-- [ ] 페이지별 텍스트 추출
-- [ ] 표 감지 및 추출
-- [ ] 이미지 추출
-- [ ] 스캔된 PDF OCR 지원
-- [ ] 배치 처리
-
-
 ## ✅기술 스택
+
 - **TypeScript** - 래퍼 프로젝트라도 타입 안정성은 중요하니까
 - **pdf-parse** - 검증된 PDF 파싱 라이브러리
 - **@modelcontextprotocol/sdk** v1.15.1 - 최신 MCP SDK
@@ -42,12 +52,10 @@ Cursor IDE의 AI는 기본적으로 PDF 파일을 읽지 못합니다. 문서나
 ## ✅설치
 
 ### 필수 요구사항
-- Docker (권장) 또는 Node.js 18+
+- Docker Desktop (WSL 통합 활성화)
 - Cursor IDE
 
-### 방법 1: Docker 설정 (권장)
-
-WSL/Windows 경로 충돌과 npm 권한 문제를 피할 수 있습니다.
+### 개발 환경 설정
 
 1. **리포지토리 클론:**
 ```bash
@@ -62,39 +70,77 @@ docker run -it --rm -v ~/workspace/pdf-mcp-server:/app -w /app node:20 npm insta
 
 3. **프로젝트 빌드:**
 ```bash
-docker run -it --rm -v ~/workspace/pdf-mcp-server:/app -w /app node:20 npm run build
+docker run --rm -v ~/workspace/pdf-mcp-server:/app -w /app node:20 npx tsc
 ```
 
-4. **테스트 실행:**
+4. **프로젝트 테스트(선택사항):**
 ```bash
-docker run -it --rm -v ~/workspace/pdf-mcp-server:/app -w /app node:20 npm test
-# 테스트가 성공적으로 완료되면 다음과 같은 메시지가 표시됩니다: "PDF MCP Server running on stdio"
+# 실행해보고 docker ps -a에서 잘 돌아가는지 확인하세요
+docker run -it --rm -v ~/workspace/pdf-mcp-server:/app -w /app node:20 node dist/index.js
 ```
 
-### 방법 2: 네이티브 Node.js 설정
+## ✅Cursor IDE 설정
+[Cursor Settings] - [Tools & Integrations] - [Add Custom MCP]
+를 통해 mcp.json 설정 파일을 수정할 수 있습니다. 
 
-네이티브 Node.js를 선호한다면 (WSL에서 경로 문제 발생 가능):
 
-```bash
-npm install
-npm run build
-npm test
-```
+#### **중요: 파일 접근 권한 설정**
 
-### Cursor IDE 설정
+PDF MCP 서버는 Docker 볼륨 마운트를 통해 파일에 접근합니다. **마운트된 디렉토리의 파일만 읽을 수 있습니다.**
 
-Cursor MCP 설정 파일(`~/.cursor/mcp_servers.json`)에 추가:
+Cursor MCP 설정 파일(`~/.cursor/mcp.json` 또는 `~/.config/cursor/mcp.json`)에 추가:
+(설정파일은 cursor update 상황에 따라 바뀔 수 있슴둥)
 
 ```json
 {
   "mcpServers": {
     "pdf-parser": {
-      "command": "node",
-      "args": ["/path/to/pdf-mcp-server/dist/index.js"]
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        // !본인의 pdf-mcp-server 설치 경로로 수정하세요. 아래의 경우 wsl환경의 workspace 경로입니다.
+        "-v", "\\\\wsl$\\Ubuntu\\home\\eager\\workspace\\pdf-mcp-server:/app", 
+
+        // !PDF 파일들이 저장된 폴더 경로로 수정하세요. 아래의 경우 cursor_mcp_dir 폴더 밑에 pdf 파일들이 존재합니다. 
+        "-v", "D:\\cursor_mcp_dir:/workspace",
+        "-w", "/app",
+        "node:20",
+        "node",
+        "dist/index.js"
+      ]
     }
   }
 }
 ```
+
+**설정 설명:**
+- `\\\\wsl$\\Ubuntu\\home\\eager\\workspace\\pdf-mcp-server:/app`: MCP 서버 코드 마운트
+- `D:\\cursor_mcp_dir:/workspace`: **PDF 파일이 있는 디렉토리 마운트 (필수!)**
+- PDF 파일은 `/workspace/` 경로로만 접근 가능
+
+**⚠️ 중요**: `D:\\cursor_mcp_dir`를 실제 PDF 파일들이 있는 Windows 디렉토리로 변경하세요.
+
+#### **실행 중인 MCP 서버 확인**
+
+Cursor IDE는 자동으로 Docker 컨테이너를 실행합니다:
+
+```bash
+# 실행 중인 컨테이너 확인
+docker ps
+
+# 예시 출력:
+# CONTAINER ID   IMAGE     COMMAND                  CREATED       STATUS       NAMES
+# abc123def456   node:20   "node dist/index.js"     2 minutes ago Up 2 minutes suspicious_turing
+```
+
+## ✅**cursor IDE에서 정상적으로 mcp등록이 된 경우**
+
+mcp.json를 저장한 후, 바로 mcp 등록이 된것을 확인할 수 있습니다. 
+![add mcp success](docs/images/2_add_mcp_success.png)
+
+
 
 ## ✅사용법
 
@@ -102,21 +148,22 @@ Cursor MCP 설정 파일(`~/.cursor/mcp_servers.json`)에 추가:
 
 ### 1. PDF 텍스트 추출 (extract_pdf_text)
 ```
-사용자: "document.pdf 파일의 내용을 읽어줄 수 있어?"
+사용자: "/workspace/document.pdf 파일의 내용을 읽어줄 수 있어?"
 
-응답: PDF 파일에서 추출된 전체 텍스트와 페이지 수, 기본 메타데이터가 함께 제공됩니다.
+응답: PDF 파일에서 추출된 텍스트(최대 100KB)와 페이지 수, 기본 메타데이터가 함께 제공됩니다.
+큰 파일은 자동으로 잘림 처리됩니다.
 ```
 
 ### 2. PDF 메타데이터 확인 (get_pdf_metadata)
 ```
-사용자: "이 PDF 파일의 메타데이터가 뭐야?"
+사용자: "/workspace/document.pdf 파일의 메타데이터가 뭐야?"
 
-응답: 제목, 작성자, 생성일, 수정일, 페이지 수 등의 상세 정보가 제공됩니다.
+응답: 제목, 작성자, 생성일, 수정일, 페이지 수와 텍스트 미리보기(200자)가 제공됩니다.
 ```
 
 ### 3. PDF 파일 검증 (validate_pdf)
 ```
-사용자: "이 파일이 유효한 PDF인가?"
+사용자: "/workspace/document.pdf 파일이 유효한 PDF인가?"
 
 응답: 파일 형식, 크기 제한, 접근 가능성을 확인한 검증 결과가 제공됩니다.
 ```
@@ -129,6 +176,70 @@ Cursor MCP 설정 파일(`~/.cursor/mcp_servers.json`)에 추가:
 | `extract_pdf_text` | PDF 텍스트 추출 | `filePath: string` | 텍스트, 페이지수, 메타데이터 |
 | `get_pdf_metadata` | 메타데이터 추출 | `filePath: string` | 제목, 작성자, 생성일 등 |
 | `validate_pdf` | PDF 검증 | `filePath: string` | 유효성 여부, 오류 메시지 |
+
+## ✅실제 시험 결과
+
+### 예시: 962페이지 딥러닝 교재 분석
+
+#### 1. validate_pdf
+**입력:**
+```json
+{
+  "filePath": "/workspace/01_study/ai_ml/pytorch_deep_learning_Intro.pdf"
+}
+```
+
+**결과:**
+```json
+{
+  "isValid": true,
+  "filePath": "/workspace/01_study/ai_ml/pytorch_deep_learning_Intro.pdf",
+  "message": "PDF file is valid"
+}
+```
+
+#### 2. get_pdf_metadata
+**입력:**
+```json
+{
+  "filePath": "/workspace/01_study/ai_ml/pytorch_deep_learning_Intro.pdf"
+}
+```
+
+**결과:**
+```json
+{
+  "text": "Contents\n문서정보1\n00. 입문자들을위한조언(Q&A)2\n00.교육문의8\n00.\n유료\nE‑book\n안내\n9\n00.책과저자소개하기10\n01. [기초] ‑딥러닝을시작하기전에11\n01‑01코랩(Colab)과아나콘다12\n1.아나콘다(Anaconda)설치...",
+  "pageCount": 962,
+  "title": "딥 러닝 파이토치 교과서 - 입문부터 파인튜닝까지",
+  "author": "이 책은 안혜정(wjddk582@naver.com)님이 구매하신 전자책입니다.",
+  "creator": "WikiDocs",
+  "producer": "xdvipdfmx (20210609)",
+  "creationDate": "D:20250521134136+09'00'"
+}
+```
+
+#### 3. extract_pdf_text
+**입력:**
+```json
+{
+  "filePath": "/workspace/01_study/ai_ml/pytorch_deep_learning_Intro.pdf"
+}
+```
+
+**결과:**
+```json
+{
+  "text": "Contents\n문서정보1\n00. 입문자들을위한조언(Q&A)2...[100KB 제한으로 잘림]",
+  "pageCount": 962,
+  "metadata": { "title": "딥 러닝 파이토치 교과서...", "author": "..." },
+  "truncated": true,
+  "originalLength": 868068
+}
+```
+
+### Cursor IDE의 채팅에서 MCP 도구 사용 결과
+![cursor chat success](docs/images/3_cursor_chat_success.png)
 
 ## ✅개발
 
@@ -151,26 +262,44 @@ pdf-mcp-server/
 
 ### 개발 스크립트
 ```bash
-# Docker 사용 (권장)
-docker run -it --rm -v ~/workspace/pdf-mcp-server:/app -w /app node:20 npm run dev
-docker run -it --rm -v ~/workspace/pdf-mcp-server:/app -w /app node:20 npm run build
+# 빌드 (필수)
+docker run --rm -v ~/workspace/pdf-mcp-server:/app -w /app node:20 npx tsc
+
+# 테스트
 docker run -it --rm -v ~/workspace/pdf-mcp-server:/app -w /app node:20 npm test
 
-# 네이티브 Node.js
-npm run dev        # 개발 모드 (핫 리로드)
-npm run build      # 프로덕션 빌드
-npm run test       # 테스트 실행
-npm run lint       # 코드 린트
-npm run format     # Prettier로 코드 포맷팅
+# 서버 실행 테스트 (선택사항 - Cursor가 자동으로 실행함)
+docker run -it --rm -v ~/workspace/pdf-mcp-server:/app -w /app node:20 node dist/index.js
+```
+
+**참고**: Cursor IDE가 MCP 서버를 자동으로 Docker 컨테이너로 실행하므로, 개발 시에는 빌드만 하면 됩니다.
+
+### 디버깅 및 로그 확인
+
+#### Docker 컨테이너 로그 확인
+```bash
+# 실행 중인 컨테이너 확인
+docker ps
+
+# 컨테이너 로그 확인 (컨테이너 이름으로)
+docker logs <CONTAINER_NAME>
+
+# 실시간 로그 확인
+docker logs -f <CONTAINER_NAME>
+```
+
+#### 예시 로그 출력
+```json
+{"result":{"content":[{"type":"text","text":"{\n  \"isValid\": true,\n  \"filePath\": \"/workspace/01_study/ai_ml/pytorch_deep_learning_Intro.pdf\",\n  \"message\": \"PDF file is valid\"\n}"}]},"jsonrpc":"2.0","id":16}
 ```
 
 ### MCP Inspector로 테스트
 
 ```bash
 # MCP 서버 기능 테스트
+cd ~/workspace/pdf-mcp-server
 npx @modelcontextprotocol/inspector node dist/index.js
 ```
-
 
 ## ✅구현 노트
 
@@ -179,47 +308,50 @@ npx @modelcontextprotocol/inspector node dist/index.js
 - **npm 권한 문제**: Docker 격리로 파일 시스템 충돌 방지
 - **MCP SDK 버전 불일치**: 존재하지 않는 0.2.0에서 최신 1.15.1로 업데이트
 - **API 변경**: 레거시 Server에서 새로운 McpServer API로 마이그레이션
+- **대용량 텍스트 처리**: Cursor IDE 터짐 방지를 위한 텍스트 크기 제한
+- **날짜 타입 오류**: 안전한 날짜 변환 함수로 해결
 
 ### 아키텍처 결정사항
 - **모듈러 설계**: PDF 파싱 로직과 MCP 서버 로직 분리
 - **포괄적 테스트**: 목킹된 의존성으로 완전한 테스트 커버리지
 - **타입 안전성**: zod 검증과 함께 엄격한 TypeScript 설정
 - **에러 핸들링**: 파일 작업과 PDF 파싱에 대한 우아한 에러 처리
+- **성능 최적화**: 텍스트 크기 제한으로 클라이언트 안정성 확보
 
 ## ✅문제 해결
 
 ### 일반적인 문제들
 
-**UNC 경로 오류로 npm install 실패:**
-- 네이티브 Node.js 대신 Docker 방식 사용
-- Windows Command Prompt가 아닌 WSL에서 실행하는지 확인
+**PDF 파일을 읽을 수 없음:**
+- Docker 볼륨 마운트 설정 확인: `"D:\\your_pdf_dir:/workspace"`
+- 파일 경로가 `/workspace/` 로 시작하는지 확인
+- Docker Desktop WSL 통합이 활성화되어 있는지 확인
 
-**TypeScript 컴파일 오류:**
-- Node.js 버전 확인 (18+ 필요)
-- 모든 의존성이 설치되었는지 확인
+**MCP 서버 연결 실패:**
+- Docker Desktop이 실행 중인지 확인
+- Cursor MCP 설정 파일 경로가 올바른지 확인
+- Cursor IDE 재시작
 
-**Cursor에서 MCP 서버 인식 안됨:**
-- mcp_servers.json의 경로가 올바른지 확인
-- 서버가 성공적으로 빌드되었는지 먼저 확인
+**빌드 오류:**
+- WSL에서 빌드: `docker run --rm -v ~/workspace/pdf-mcp-server:/app -w /app node:20 npx tsc`
+- 의존성 재설치: `docker run -it --rm -v ~/workspace/pdf-mcp-server:/app -w /app node:20 npm install`
 
-## ✅제한사항
+## 제한사항
 
+- **파일 접근**: Docker 볼륨 마운트된 디렉토리의 파일만 접근 가능
 - **파일 크기**: 큰 PDF(100MB 이상)는 성능상 이유로 거부됨
+- **텍스트 크기**: 추출된 텍스트는 100KB로 제한 (Cursor IDE 안정성)
+- **메타데이터**: 텍스트 미리보기는 200자로 제한
 - **복잡한 레이아웃**: 표나 다단 레이아웃은 완벽하게 파싱되지 않을 수 있음
 - **스캔된 PDF**: OCR 지원은 계획 중이지만 아직 미구현
-- **보안**: 악성코드 스캔이나 악성 PDF 탐지 기능 없음
 
-## ✅라이선스
+## 라이선스
 
 MIT 라이선스 - 공유가 배려니까, 그리고 어차피 래퍼일 뿐이니까.
 
-## ✅감사의 말
+## 감사의 말
 
 - [pdf-parse](https://www.npmjs.com/package/pdf-parse) - 실제 PDF 파싱의 무거운 작업을 담당
 - [MCP Protocol](https://modelcontextprotocol.io/) - 이런 연동을 가능하게 해준
 - [Cursor IDE](https://cursor.sh/) - 확장할 가치가 있는 IDE를 만들어준
 - Docker 커뮤니티 - 환경 호환성 악몽을 해결해준
-
----
-
-**상태**: 초기 개발 단계. 기본 기능은 작동하지만 거친 부분들과 브레이킹 체인지를 예상하세요. 생산성 도구로 포장된 학습 프로젝트입니다.

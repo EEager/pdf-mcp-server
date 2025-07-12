@@ -51,14 +51,32 @@ export class PDFParser {
   }
 
   /**
-   * Get PDF metadata
+   * Convert date to ISO string safely
+   */
+  private formatDate(date: any): string | undefined {
+    if (!date) return undefined;
+    if (date instanceof Date) return date.toISOString();
+    if (typeof date === 'string') {
+      const parsed = new Date(date);
+      return isNaN(parsed.getTime()) ? date : parsed.toISOString();
+    }
+    return String(date);
+  }
+
+  /**
+   * Get PDF metadata only (without full text)
    */
   async getMetadata(filePath: string): Promise<ParsedPDFContent> {
     try {
       const result = await this.extractText(filePath);
       
+      // 텍스트 미리보기만 포함 (첫 200자)
+      const textPreview = result.text.length > 200 
+        ? result.text.substring(0, 200) + '...' 
+        : result.text;
+      
       return {
-        text: result.text,
+        text: textPreview,  // 전체 텍스트 대신 미리보기만
         pageCount: result.pageCount,
         title: result.metadata.Title,
         author: result.metadata.Author,
@@ -66,8 +84,8 @@ export class PDFParser {
         keywords: result.metadata.Keywords,
         creator: result.metadata.Creator,
         producer: result.metadata.Producer,
-        creationDate: result.metadata.CreationDate?.toISOString(),
-        modificationDate: result.metadata.ModDate?.toISOString(),
+        creationDate: this.formatDate(result.metadata.CreationDate),
+        modificationDate: this.formatDate(result.metadata.ModDate),
       };
     } catch (error) {
       throw new Error(`Failed to get PDF metadata: ${error instanceof Error ? error.message : 'Unknown error'}`);

@@ -32,14 +32,27 @@ class PDFMCPServer {
       async ({ filePath }) => {
         try {
           const result = await this.pdfParser.extractText(filePath);
+          
+          // 텍스트 크기 제한 (100KB = 100,000 문자로 줄임)
+          const maxTextLength = 100000;
+          let textContent = result.text;
+          let truncated = false;
+          
+          if (textContent.length > maxTextLength) {
+            textContent = textContent.substring(0, maxTextLength) + '\n\n[텍스트가 너무 길어서 잘렸습니다. 전체 내용을 보려면 더 작은 단위로 요청하세요.]';
+            truncated = true;
+          }
+          
           return {
             content: [
               {
                 type: 'text' as const,
                 text: JSON.stringify({
-                  text: result.text,
+                  text: textContent,
                   pageCount: result.pageCount,
                   metadata: result.metadata,
+                  truncated: truncated,
+                  originalLength: result.text.length
                 }, null, 2),
               },
             ],
