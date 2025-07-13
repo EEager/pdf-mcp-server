@@ -105,6 +105,66 @@ class PDFMCPServer {
       }
     );
 
+    // Extract PDF pages tool
+    this.server.registerTool(
+      'extract_pdf_pages',
+      {
+        description: 'Extract text from specific pages or page ranges of a PDF file',
+        inputSchema: {
+          filePath: z.string().describe('Path to the PDF file to extract pages from'),
+          startPage: z.number().optional().describe('Start page number (1-based, optional)'),
+          endPage: z.number().optional().describe('End page number (1-based, optional)'),
+          pageNumbers: z.array(z.number()).optional().describe('Specific page numbers to extract (1-based, optional)'),
+        },
+      },
+      async ({ filePath, startPage, endPage, pageNumbers }) => {
+        try {
+          const result = await this.pdfParser.extractTextFromPages({
+            filePath,
+            startPage,
+            endPage,
+            pageNumbers,
+          });
+          
+          // 텍스트 크기 제한 (200KB = 200,000 문자 - 페이지별이라 조금 더 크게)
+          const maxTextLength = 200000;
+          let textContent = result.text;
+          let truncated = false;
+          
+          if (textContent.length > maxTextLength) {
+            textContent = textContent.substring(0, maxTextLength) + '\n\n[텍스트가 너무 길어서 잘렸습니다. 더 작은 범위로 요청하세요.]';
+            truncated = true;
+          }
+          
+          return {
+            content: [
+              {
+                type: 'text' as const,
+                text: JSON.stringify({
+                  text: textContent,
+                  pageCount: result.pageCount,
+                  extractedPages: result.extractedPages,
+                  metadata: result.metadata,
+                  truncated: truncated,
+                  originalLength: result.text.length
+                }, null, 2),
+              },
+            ],
+          };
+        } catch (error) {
+          return {
+            content: [
+              {
+                type: 'text' as const,
+                text: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+              },
+            ],
+            isError: true,
+          };
+        }
+      }
+    );
+
     // Validate PDF tool
     this.server.registerTool(
       'validate_pdf',

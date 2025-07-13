@@ -33,18 +33,56 @@ export class PDFParser {
 
   /**
    * Extract text from specific pages
+   * Note: pdf-parse doesn't support true page-by-page extraction
+   * This implementation simulates page selection by text length estimation
    */
   async extractTextFromPages(options: PDFTextExtractOptions): Promise<PDFTextExtractResult> {
     try {
-      const result = await this.extractText(options.filePath);
+      // 먼저 전체 텍스트 추출
+      const fullResult = await this.extractText(options.filePath);
       
-      // Note: pdf-parse doesn't support page-specific extraction directly
-      // This is a placeholder for future implementation
-      if (options.pageNumbers || options.startPage || options.endPage) {
-        console.warn('Page-specific extraction is not yet implemented. Returning full text.');
+      // 페이지별 분할은 대략적인 추정으로 처리
+      // 실제 PDF 라이브러리 한계로 인해 완벽한 페이지 분리는 불가능
+      const avgCharsPerPage = Math.floor(fullResult.text.length / fullResult.pageCount);
+      
+      // 페이지 번호가 지정된 경우
+      if (options.pageNumbers && options.pageNumbers.length > 0) {
+        const validPages = options.pageNumbers.filter(p => p >= 1 && p <= fullResult.pageCount);
+        const resultText = validPages.map(pageNum => {
+          const startIdx = (pageNum - 1) * avgCharsPerPage;
+          const endIdx = pageNum * avgCharsPerPage;
+          const pageText = fullResult.text.substring(startIdx, endIdx);
+          return `--- 페이지 ${pageNum} (추정) ---\n${pageText}\n`;
+        }).join('\n');
+        
+        return {
+          text: resultText,
+          pageCount: fullResult.pageCount,
+          metadata: fullResult.metadata,
+          extractedPages: validPages
+        };
       }
-
-      return result;
+      
+      // 범위가 지정된 경우
+      const startPage = Math.max(1, options.startPage || 1);
+      const endPage = Math.min(fullResult.pageCount, options.endPage || fullResult.pageCount);
+      
+      if (startPage !== 1 || endPage !== fullResult.pageCount) {
+        const startIdx = (startPage - 1) * avgCharsPerPage;
+        const endIdx = endPage * avgCharsPerPage;
+        const rangeText = fullResult.text.substring(startIdx, endIdx);
+        
+        return {
+          text: `--- 페이지 ${startPage}-${endPage} (추정) ---\n${rangeText}`,
+          pageCount: fullResult.pageCount,
+          metadata: fullResult.metadata,
+          extractedPages: Array.from({length: endPage - startPage + 1}, (_, i) => startPage + i)
+        };
+      }
+      
+      // 기본: 전체 텍스트 반환
+      return fullResult;
+      
     } catch (error) {
       throw new Error(`Failed to extract text from pages: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }

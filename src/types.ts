@@ -36,6 +36,7 @@ export interface PDFTextExtractResult {
   text: string;
   pageCount: number;
   metadata: PDFInfo;
+  extractedPages?: number[];  // 추출된 페이지 번호들 (선택사항)
 }
 
 export interface ParsedPDFContent {

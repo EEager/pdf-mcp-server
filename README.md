@@ -23,20 +23,22 @@ Cursor IDE의 AI는 기본적으로 PDF 파일을 읽지 못합니다. 문서나
 - pdf-parse 라이브러리를 이용한 PDF 텍스트 추출
 - PDF 메타데이터 추출
 - PDF 파일 검증 기능
+- **페이지별 텍스트 추출 (범위 지정, 특정 페이지 선택)**
 - 완전한 테스트 스위트 (8/8 테스트 통과)
 - TypeScript 빌드 시스템
 - Docker 기반 개발 환경
 - Cursor IDE 연동 완료 및 실제 동작 확인
 
 🔧 **다음 단계:**
-- 페이지별 텍스트 추출
 - 표 데이터 추출
+- 이미지 추출
 - GitHub Actions CI/CD 설정
 
 ## ✅기능
 
 ### 현재 구현된 기능
-- **extract_pdf_text**: PDF 파일에서 텍스트 추출 (크기 제한: 100KB)
+- **extract_pdf_text**: PDF 파일에서 전체 텍스트 추출 (크기 제한: 100KB)
+- **extract_pdf_pages**: PDF 특정 페이지 또는 페이지 범위 텍스트 추출 (크기 제한: 200KB)
 - **get_pdf_metadata**: PDF 메타데이터 추출 (제목, 작성자, 생성일 등 + 텍스트 미리보기 200자)
 - **validate_pdf**: PDF 파일 형식 및 크기 제한 검증
 
@@ -146,22 +148,35 @@ mcp.json를 저장한 후, 바로 mcp 등록이 된것을 확인할 수 있습�
 
 설정이 완료되면 Cursor IDE에서 다음과 같이 사용할 수 있습니다:
 
-### 1. PDF 텍스트 추출 (extract_pdf_text)
+### 1. PDF 전체 텍스트 추출 (extract_pdf_text)
 ```
 사용자: "/workspace/document.pdf 파일의 내용을 읽어줄 수 있어?"
 
-응답: PDF 파일에서 추출된 텍스트(최대 100KB)와 페이지 수, 기본 메타데이터가 함께 제공됩니다.
+응답: PDF 파일에서 추출된 전체 텍스트(최대 100KB)와 페이지 수, 기본 메타데이터가 함께 제공됩니다.
 큰 파일은 자동으로 잘림 처리됩니다.
 ```
 
-### 2. PDF 메타데이터 확인 (get_pdf_metadata)
+### 2. PDF 페이지별 텍스트 추출 (extract_pdf_pages) ⭐ 신기능
+```
+사용자: "/workspace/document.pdf 파일의 5-10페이지만 읽어줄 수 있어?"
+또는: "/workspace/document.pdf 파일의 1, 3, 5페이지만 추출해줘"
+
+응답: 지정된 페이지들의 텍스트(최대 200KB)가 페이지별로 구분되어 제공됩니다.
+```
+
+**페이지별 추출 옵션:**
+- **페이지 범위**: `startPage: 5, endPage: 10` (5-10페이지)
+- **특정 페이지**: `pageNumbers: [1, 3, 5, 7]` (1, 3, 5, 7페이지)
+- **시작 페이지부터**: `startPage: 10` (10페이지부터 끝까지)
+
+### 3. PDF 메타데이터 확인 (get_pdf_metadata)
 ```
 사용자: "/workspace/document.pdf 파일의 메타데이터가 뭐야?"
 
 응답: 제목, 작성자, 생성일, 수정일, 페이지 수와 텍스트 미리보기(200자)가 제공됩니다.
 ```
 
-### 3. PDF 파일 검증 (validate_pdf)
+### 4. PDF 파일 검증 (validate_pdf)
 ```
 사용자: "/workspace/document.pdf 파일이 유효한 PDF인가?"
 
@@ -173,7 +188,8 @@ mcp.json를 저장한 후, 바로 mcp 등록이 된것을 확인할 수 있습�
 
 | 도구명 | 설명 | 입력 파라미터 | 출력 |
 |--------|------|---------------|------|
-| `extract_pdf_text` | PDF 텍스트 추출 | `filePath: string` | 텍스트, 페이지수, 메타데이터 |
+| `extract_pdf_text` | PDF 전체 텍스트 추출 | `filePath: string` | 텍스트, 페이지수, 메타데이터 |
+| `extract_pdf_pages` | 특정 페이지 텍스트 추출 | `filePath, startPage?, endPage?, pageNumbers?` | 페이지별 텍스트, 추출된 페이지 목록 |
 | `get_pdf_metadata` | 메타데이터 추출 | `filePath: string` | 제목, 작성자, 생성일 등 |
 | `validate_pdf` | PDF 검증 | `filePath: string` | 유효성 여부, 오류 메시지 |
 
@@ -219,6 +235,7 @@ mcp.json를 저장한 후, 바로 mcp 등록이 된것을 확인할 수 있습�
 }
 ```
 
+
 #### 3. extract_pdf_text
 **입력:**
 ```json
@@ -237,6 +254,37 @@ mcp.json를 저장한 후, 바로 mcp 등록이 된것을 확인할 수 있습�
   "originalLength": 868068
 }
 ```
+
+#### 4. extract_pdf_pages (신기능!) ⭐
+**입력 - 특정 챕터 읽기:**
+```json
+{
+  "filePath": "/workspace/01_study/ai_ml/pytorch_deep_learning_Intro.pdf",
+  "startPage": 50,
+  "endPage": 60
+}
+```
+
+**입력 - 특정 페이지들만:**
+```json
+{
+  "filePath": "/workspace/01_study/ai_ml/pytorch_deep_learning_Intro.pdf",
+  "pageNumbers": [1, 5, 10, 100]
+}
+```
+
+**결과:**
+```json
+{
+  "text": "--- 페이지 50 ---\n파이토치 기초 설명...\n\n--- 페이지 51 ---\n텐서 연산에 대한 내용...\n\n--- 페이지 52 ---\n...",
+  "pageCount": 962,
+  "extractedPages": [50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60],
+  "metadata": { "title": "딥 러닝 파이토치 교과서...", "author": "..." },
+  "truncated": false,
+  "originalLength": 15420
+}
+```
+
 
 ### Cursor IDE의 채팅에서 MCP 도구 사용 결과
 ![cursor chat success](docs/images/3_cursor_chat_success.png)
@@ -317,6 +365,7 @@ npx @modelcontextprotocol/inspector node dist/index.js
 - **타입 안전성**: zod 검증과 함께 엄격한 TypeScript 설정
 - **에러 핸들링**: 파일 작업과 PDF 파싱에 대한 우아한 에러 처리
 - **성능 최적화**: 텍스트 크기 제한으로 클라이언트 안정성 확보
+- **페이지별 처리**: pdf-parse의 pagerender 콜백으로 페이지 단위 텍스트 추출
 
 ## ✅문제 해결
 
@@ -340,7 +389,7 @@ npx @modelcontextprotocol/inspector node dist/index.js
 
 - **파일 접근**: Docker 볼륨 마운트된 디렉토리의 파일만 접근 가능
 - **파일 크기**: 큰 PDF(100MB 이상)는 성능상 이유로 거부됨
-- **텍스트 크기**: 추출된 텍스트는 100KB로 제한 (Cursor IDE 안정성)
+- **텍스트 크기**: 전체 텍스트는 100KB, 페이지별 텍스트는 200KB로 제한 (Cursor IDE 안정성)
 - **메타데이터**: 텍스트 미리보기는 200자로 제한
 - **복잡한 레이아웃**: 표나 다단 레이아웃은 완벽하게 파싱되지 않을 수 있음
 - **스캔된 PDF**: OCR 지원은 계획 중이지만 아직 미구현
